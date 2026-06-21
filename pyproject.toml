@@ -1,6 +1,25 @@
 [project]
+name = "loremaster"
+version = "0.1.0"
+description = "Multi-agent AI Dungeon Master for Discord"
 requires-python = ">=3.12"
+dependencies = [
+    "google-adk",
+    "discord.py",
+    "mcp",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
