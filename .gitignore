@@ -1,6 +1,7 @@
 .env
 __pycache__/
 *.pyc
+campaign_state.json
 .venv/
 *.egg-info/
 dist/
