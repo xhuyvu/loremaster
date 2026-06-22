@@ -7,3 +7,4 @@ campaign_state.json
 dist/
 build/
 .DS_Store
+scraped/
