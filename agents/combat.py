@@ -3,9 +3,7 @@
 from google.adk.agents import Agent
 
 
-def _roll_dice(count: int, sides: int) -> str:
-    """Stub: will call Dice MCP server."""
-    return f"[Rolled {count}d{sides} — stub]"
+from mcp_servers.dice_server.server import roll_dice
 
 
 class CombatEngineAgent(Agent):
@@ -17,4 +15,4 @@ class CombatEngineAgent(Agent):
         "Report results clearly for the DM Orchestrator to narrate."
     )
     description: str = "Manages combat — initiative, HP, conditions, dice rolls"
-    tools: list = [_roll_dice]
+    tools: list = [roll_dice]

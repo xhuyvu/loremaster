@@ -3,9 +3,7 @@
 from google.adk.agents import Agent
 
 
-def _query_srd(query: str) -> str:
-    """Stub: will call SRD MCP server."""
-    return f"[SRD lookup for '{query}' — stub]"
+from mcp_servers.srd_server.server import query_srd, lookup_srd
 
 
 class RulesAdjudicatorAgent(Agent):
@@ -17,4 +15,4 @@ class RulesAdjudicatorAgent(Agent):
         "If the SRD doesn't cover it, say so clearly."
     )
     description: str = "Answers D&D 5e rules questions via SRD lookup"
-    tools: list = [_query_srd]
+    tools: list = [query_srd, lookup_srd]

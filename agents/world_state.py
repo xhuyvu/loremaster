@@ -3,14 +3,7 @@
 from google.adk.agents import Agent
 
 
-def _get_state(key: str) -> str:
-    """Stub: will call Campaign State MCP server."""
-    return f"[get_state('{key}') — stub]"
-
-
-def _set_state(key: str, value: str) -> str:
-    """Stub: will call Campaign State MCP server."""
-    return f"[set_state('{key}', '{value}') — stub]"
+from mcp_servers.campaign_state_server.server import get_state, set_state
 
 
 class WorldStateAgent(Agent):
@@ -23,4 +16,4 @@ class WorldStateAgent(Agent):
         "All state mutations go through you — no raw DB access."
     )
     description: str = "Manages campaign state — quests, inventory, world"
-    tools: list = [_get_state, _set_state]
+    tools: list = [get_state, set_state]
