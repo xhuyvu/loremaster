@@ -1,10 +1,21 @@
 # AGENTS.md — Loremaster
 
+## Setup
+
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install
+pip install -r requirements.txt
+```
+
 ## Commands
 
 ```bash
-# Install
-pip install -r requirements.txt
+# Always activate venv first
+source .venv/bin/activate
 
 # Start MCP servers (each in its own terminal)
 python mcp_servers/dice_server/run.py
@@ -71,3 +82,13 @@ State mutation only through World-State MCP. Narration output back to player.
 - Secrets from `os.environ` only. Never logged.
 - Guard uses a discriminator model, not a keyword list.
 - One `demo()` / `__main__` self-check per non-trivial module. Skip trivial one-liners.
+
+## Git conventions
+
+- Branch naming: `<type>/<short-description>` (e.g. `feat/dice-server`, `fix/initiative-roll`)
+- Commit message format: `<type>(<optional scope>): <short summary>`
+  - Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
+  - Scope: module/area (e.g. `mcp`, `agents`, `bot`, `project`)
+  - Summary: lowercase, no period, imperative mood
+  - Body (optional): blank line then wrapped at 100 chars
+- Small, focused commits. Stop before each commit for review.
