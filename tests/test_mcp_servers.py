@@ -1,5 +1,7 @@
 """Tests for MCP server modules."""
 
+import re
+
 import pytest
 
 
@@ -9,6 +11,45 @@ async def test_dice_server_demo():
 
     tools = [t.name for t in await mcp.list_tools()]
     assert "roll_dice" in tools
+
+
+class TestRollDice:
+    def test_basic_roll(self):
+        from mcp_servers.dice_server.server import roll_dice
+
+        result = roll_dice(2, 6)
+        m = re.match(r"Rolled 2d6: \[(\d+), (\d+)\] \(total: (\d+)\)", result)
+        assert m, f"unexpected format: {result}"
+        v1, v2, total = int(m[1]), int(m[2]), int(m[3])
+        assert 1 <= v1 <= 6
+        assert 1 <= v2 <= 6
+        assert v1 + v2 == total
+
+    def test_range(self):
+        from mcp_servers.dice_server.server import roll_dice
+
+        for _ in range(20):
+            result = roll_dice(1, 20)
+            v = int(result.split("[")[1].split("]")[0])
+            assert 1 <= v <= 20
+
+    def test_invalid_count(self):
+        from mcp_servers.dice_server.server import roll_dice
+
+        with pytest.raises(ValueError):
+            roll_dice(0, 6)
+
+    def test_invalid_sides(self):
+        from mcp_servers.dice_server.server import roll_dice
+
+        with pytest.raises(ValueError):
+            roll_dice(1, 1)
+
+    def test_excessive_count(self):
+        from mcp_servers.dice_server.server import roll_dice
+
+        with pytest.raises(ValueError):
+            roll_dice(101, 6)
 
 
 @pytest.mark.asyncio
