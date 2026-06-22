@@ -1,5 +1,7 @@
 """Dice MCP server for verifiable dice rolls."""
 
+import asyncio
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dice-server")
@@ -12,7 +14,6 @@ def roll_dice(count: int = 1, sides: int = 20) -> str:
     return f"Rolled {count}d{sides}: (stub)"
 
 
-import asyncio
 
 
 async def demo():

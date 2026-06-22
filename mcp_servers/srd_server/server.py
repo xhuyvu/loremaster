@@ -1,5 +1,7 @@
 """SRD MCP server for D&D 5e rules lookup."""
 
+import asyncio
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("srd-server")
@@ -11,7 +13,6 @@ def query_srd(query: str) -> str:
     return f"SRD lookup for '{query}': (stub)"
 
 
-import asyncio
 
 
 async def demo():

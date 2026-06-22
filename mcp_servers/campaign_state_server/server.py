@@ -1,5 +1,7 @@
 """Campaign state MCP server for long-term memory."""
 
+import asyncio
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("campaign-state-server")
@@ -17,7 +19,6 @@ def set_state(key: str, value: str) -> str:
     return f"set_state('{key}', '{value}'): (stub)"
 
 
-import asyncio
 
 
 async def demo():
