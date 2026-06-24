@@ -16,6 +16,7 @@ class OrchestratorAgent(Agent):
         "Delegate to sub-agents for rules questions (rules_adjudicator), "
         "combat resolution (combat_engine), NPC dialogue (npc_persona), "
         "and world/campaign state changes (world_state). "
+        "Ask world_state for campaign info and party roster to set the scene. "
         "Keep the game moving and fun."
     )
     description: str = "Main DM agent — narrates and delegates"

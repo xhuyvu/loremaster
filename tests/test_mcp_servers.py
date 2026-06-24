@@ -67,6 +67,10 @@ async def test_campaign_state_server_demo():
     tools = [t.name for t in await mcp.list_tools()]
     assert "get_state" in tools
     assert "set_state" in tools
+    assert "init_campaign" in tools
+    assert "get_campaign" in tools
+    assert "add_pc" in tools
+    assert "get_party" in tools
 
 
 class TestCampaignState:
@@ -117,4 +121,63 @@ class TestCampaignState:
         v1 = get_state("quest")
         v2 = get_state("quest")
         assert v1 == v2 == "save the village"
+        _DATA_FILE.unlink(missing_ok=True)
+
+
+class TestCampaignInit:
+    def test_init_and_get(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_campaign,
+            init_campaign,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        result = init_campaign("Test", "A test world", "Start Town")
+        assert "initialized" in result
+        raw = get_campaign()
+        c = json.loads(raw)
+        assert c["name"] == "Test"
+        assert c["setting"] == "A test world"
+        assert c["starting_location"] == "Start Town"
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_get_campaign_not_set(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_campaign,
+        )
+
+        _DATA_FILE.unlink(missing_ok=True)
+        assert get_campaign() == '""'
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_add_pc_and_get_party(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            add_pc,
+            get_party,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        add_pc("Alice", "Elf", "Wizard", 2)
+        add_pc("Bob", "Dwarf", "Fighter", 1)
+        raw = get_party()
+        party = json.loads(raw)
+        assert len(party) == 2
+        assert party[0]["name"] == "Alice"
+        assert party[0]["level"] == 2
+        assert party[1]["name"] == "Bob"
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_get_party_empty(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_party,
+        )
+
+        _DATA_FILE.unlink(missing_ok=True)
+        assert get_party() == "[]"
         _DATA_FILE.unlink(missing_ok=True)
