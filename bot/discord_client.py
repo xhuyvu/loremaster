@@ -7,10 +7,10 @@ import discord
 from discord import app_commands
 from dotenv import load_dotenv
 from google.adk import Runner
+from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from agents.guard import Guard
 from agents.orchestrator import OrchestratorAgent
-from agents.session_service import FileSessionService
 from mcp_servers.campaign_state_server.server import (
     add_pc,
     get_campaign,
@@ -24,16 +24,6 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
-
-guard = Guard()
-orchestrator = OrchestratorAgent()
-_session_service = FileSessionService()
-_runner = Runner(
-    agent=orchestrator,
-    session_service=_session_service,
-    app_name="loremaster",
-)
-
 
 @tree.command(name="campaign", description="Manage campaign settings")
 @app_commands.describe(
