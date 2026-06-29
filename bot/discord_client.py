@@ -13,8 +13,12 @@ from agents.guard import Guard
 from agents.orchestrator import OrchestratorAgent
 from mcp_servers.campaign_state_server.server import (
     add_pc,
+    delete_npc,
     get_campaign,
+    get_npc,
     init_campaign,
+    list_npcs,
+    set_npc,
 )
 
 load_dotenv()
@@ -24,6 +28,7 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+
 
 @tree.command(name="campaign", description="Manage campaign settings")
 @app_commands.describe(
@@ -55,7 +60,9 @@ async def campaign(
                 f"**{c['name']}** — {c['setting']}\nStarting location: {c['starting_location']}"
             )
         else:
-            await interaction.response.send_message("No campaign set. Use /campaign init to start one.")
+            await interaction.response.send_message(
+                "No campaign set. Use /campaign init to start one."
+            )
     else:
         await interaction.response.send_message("Action must be `init` or `status`.")
 
@@ -87,6 +94,73 @@ async def pc(
     else:
         await interaction.response.send_message("Action must be `add`.")
 
+
+@tree.command(name="npc", description="Manage NPC profiles")
+@app_commands.describe(
+    action="create, view, list, or delete",
+    name="NPC name (required for create/view/delete)",
+    personality="Personality description (for create)",
+    knowledge="Knowledge/secrets (for create)",
+    stats="Stats block (for create)",
+)
+async def npc(
+    interaction: discord.Interaction,
+    action: str,
+    name: str = None,
+    personality: str = None,
+    knowledge: str = None,
+    stats: str = None,
+):
+    if action == "create":
+        if not name:
+            await interaction.response.send_message(
+                "Usage: /npc create name:<name> [personality:...] [knowledge:...] [stats:...]"
+            )
+            return
+        result = set_npc(name, personality or "", knowledge or "", stats or "")
+        await interaction.response.send_message(result)
+    elif action == "view":
+        if not name:
+            await interaction.response.send_message("Usage: /npc view name:<name>")
+            return
+        import json
+
+        raw = get_npc(name)
+        if raw and raw != '""':
+            profile = json.loads(raw)
+            lines = [f"**{name}**"]
+            if profile.get("personality"):
+                lines.append(f"*Personality:* {profile['personality']}")
+            if profile.get("knowledge"):
+                lines.append(f"*Knowledge:* {profile['knowledge']}")
+            if profile.get("stats"):
+                lines.append(f"*Stats:* {profile['stats']}")
+            await interaction.response.send_message("\n".join(lines))
+        else:
+            await interaction.response.send_message(f"No NPC found named '{name}'.")
+    elif action == "list":
+        import json
+
+        raw = list_npcs()
+        names = json.loads(raw)
+        if names:
+            await interaction.response.send_message(
+                "Known NPCs: " + ", ".join(f"**{n}**" for n in names)
+            )
+        else:
+            await interaction.response.send_message("No NPCs have been created yet.")
+    elif action == "delete":
+        if not name:
+            await interaction.response.send_message("Usage: /npc delete name:<name>")
+            return
+        result = delete_npc(name)
+        await interaction.response.send_message(result)
+    else:
+        await interaction.response.send_message(
+            "Action must be `create`, `view`, `list`, or `delete`."
+        )
+
+
 # ponytail: global runner + in-memory sessions. Per-channel sessions would use
 # DB-backed session service; per-user runners if throughput requires it.
 guard = Guard()
@@ -112,9 +186,7 @@ async def on_message(message: discord.Message):
 
     is_safe, reason = await guard.injection_filter(message.content)
     if not is_safe:
-        await message.channel.send(
-            f"{message.author.mention} Message blocked: {reason}"
-        )
+        await message.channel.send(f"{message.author.mention} Message blocked: {reason}")
         return
 
     responses = []

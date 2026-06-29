@@ -38,3 +38,12 @@ def test_world_state_tools():
     assert "get_party" in tool_names
     assert "get_state" in tool_names
     assert "set_state" in tool_names
+    assert "set_npc" in tool_names
+    assert "get_npc" in tool_names
+    assert "list_npcs" in tool_names
+    assert "delete_npc" in tool_names
+
+
+def test_npc_persona_tools():
+    a = NpcPersonaAgent()
+    assert "get_npc" in {t.__name__ for t in a.tools}

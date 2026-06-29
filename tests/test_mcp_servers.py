@@ -71,6 +71,10 @@ async def test_campaign_state_server_demo():
     assert "get_campaign" in tools
     assert "add_pc" in tools
     assert "get_party" in tools
+    assert "set_npc" in tools
+    assert "get_npc" in tools
+    assert "list_npcs" in tools
+    assert "delete_npc" in tools
 
 
 class TestCampaignState:
@@ -180,4 +184,81 @@ class TestCampaignInit:
 
         _DATA_FILE.unlink(missing_ok=True)
         assert get_party() == "[]"
+        _DATA_FILE.unlink(missing_ok=True)
+
+
+class TestNpcCrud:
+    def test_set_and_get_npc(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_npc,
+            set_npc,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        result = set_npc("Elminster", "Wise and cryptic", "Knows the Weave", "STR 10")
+        assert "saved" in result
+        raw = get_npc("Elminster")
+        profile = json.loads(raw)
+        assert profile["personality"] == "Wise and cryptic"
+        assert profile["knowledge"] == "Knows the Weave"
+        assert profile["stats"] == "STR 10"
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_get_npc_not_found(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_npc,
+        )
+
+        _DATA_FILE.unlink(missing_ok=True)
+        assert get_npc("Ghost") == '""'
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_update_npc(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_npc,
+            set_npc,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        set_npc("Elminster", "Old")
+        set_npc("Elminster", "Ancient and wise")
+        profile = json.loads(get_npc("Elminster"))
+        assert profile["personality"] == "Ancient and wise"
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_list_npcs(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            list_npcs,
+            set_npc,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        assert json.loads(list_npcs()) == []
+        set_npc("Elminster", "Wise")
+        set_npc("Durnan", "Gruff")
+        names = json.loads(list_npcs())
+        assert "Elminster" in names
+        assert "Durnan" in names
+        _DATA_FILE.unlink(missing_ok=True)
+
+    def test_delete_npc(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            delete_npc,
+            get_npc,
+            set_npc,
+        )
+
+        _DATA_FILE.unlink(missing_ok=True)
+        set_npc("Elminster", "Wise")
+        assert "deleted" in delete_npc("Elminster")
+        assert get_npc("Elminster") == '""'
+        assert "not found" in delete_npc("Ghost")
         _DATA_FILE.unlink(missing_ok=True)

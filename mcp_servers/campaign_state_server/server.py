@@ -75,6 +75,42 @@ def get_party() -> str:
     return json.dumps(data.get("party", []))
 
 
+@mcp.tool()
+def set_npc(name: str, personality: str = "", knowledge: str = "", stats: str = "") -> str:
+    """Create or update an NPC profile with personality, knowledge, and stats."""
+    data = _load()
+    npcs = data.setdefault("npcs", {})
+    npcs[name] = {"personality": personality, "knowledge": knowledge, "stats": stats}
+    data["npcs"] = npcs
+    _save(data)
+    return f"NPC '{name}' saved."
+
+
+@mcp.tool()
+def get_npc(name: str) -> str:
+    """Return an NPC's full profile as JSON, or empty string if not found."""
+    data = _load()
+    return json.dumps(data.get("npcs", {}).get(name, ""))
+
+
+@mcp.tool()
+def list_npcs() -> str:
+    """Return a list of all NPC names as JSON."""
+    data = _load()
+    return json.dumps(list(data.get("npcs", {}).keys()))
+
+
+@mcp.tool()
+def delete_npc(name: str) -> str:
+    """Delete an NPC profile by name."""
+    data = _load()
+    npcs = data.get("npcs", {})
+    if name in npcs:
+        del npcs[name]
+        data["npcs"] = npcs
+        _save(data)
+        return f"NPC '{name}' deleted."
+    return f"NPC '{name}' not found."
 
 
 async def demo():
@@ -103,6 +139,17 @@ async def demo():
     party = json.loads(get_party())
     assert len(party) == 1
     assert party[0]["name"] == "Alice"
+
+    assert "saved" in set_npc(
+        "Elminster", "Wise and cryptic", "Knows the Weave", "STR 10, DEX 14, CON 12"
+    )
+    profile = json.loads(get_npc("Elminster"))
+    assert profile["personality"] == "Wise and cryptic"
+    assert profile["knowledge"] == "Knows the Weave"
+    assert "Elminster" in json.loads(list_npcs())
+    assert "deleted" in delete_npc("Elminster")
+    assert get_npc("Elminster") == '""'
+    assert "not found" in delete_npc("Ghost")
 
     _DATA_FILE.unlink()
     print("OK — all tools verified")
