@@ -90,5 +90,6 @@ State mutation only through World-State MCP. Narration output back to player.
   - Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
   - Scope: module/area (e.g. `mcp`, `agents`, `bot`, `project`)
   - Summary: lowercase, no period, imperative mood
-  - Body (optional): blank line then wrapped at 100 chars
-- Small, focused commits. Stop before each commit for review.
+  - Body (optional): blank line then wrapped at 150 chars
+- Small, focused commits.
+- Do not commit automatically. Show the proposed commit message and wait for approval before committing.

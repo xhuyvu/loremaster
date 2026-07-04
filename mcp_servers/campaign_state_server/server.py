@@ -75,6 +75,54 @@ def get_party() -> str:
     return json.dumps(data.get("party", []))
 
 
+@mcp.tool()
+def get_combat_state() -> str:
+    """Return the current combat state as JSON, or empty dict if no active combat."""
+    data = _load()
+    return json.dumps(data.get("combat", {}))
+
+
+@mcp.tool()
+def apply_damage(name: str, amount: int) -> str:
+    """Apply damage (positive amount) or healing (negative amount) to a combatant.
+    Returns a summary like '{name} takes X damage (HP: Y/Z)' or '{name} heals X (HP: Y/Z)'.
+    HP is floored at 0 and capped at max_hp."""
+    data = _load()
+    combat = data.get("combat", {})
+    combatants = combat.get("combatants", [])
+    for c in combatants:
+        if c["name"] == name:
+            old_hp = c["hp"]
+            new_hp = old_hp - amount
+            new_hp = max(0, min(new_hp, c["max_hp"]))
+            c["hp"] = new_hp
+            data["combat"] = combat
+            _save(data)
+            if amount > 0:
+                return f"{name} takes {amount} damage (HP: {new_hp}/{c['max_hp']})"
+            else:
+                return f"{name} heals {-amount} (HP: {new_hp}/{c['max_hp']})"
+    return f"Combatant '{name}' not found."
+
+
+@mcp.tool()
+def set_combat_state(value: str) -> str:
+    """Replace the entire combat state from a JSON string.
+    Expected shape: {"round": 1, "current_turn_index": 0, "combatants": [...]}
+    Returns 'Combat state updated.'"""
+    data = _load()
+    data["combat"] = json.loads(value)
+    _save(data)
+    return "Combat state updated."
+
+
+@mcp.tool()
+def end_combat() -> str:
+    """End the active combat and clear combat state."""
+    data = _load()
+    data.pop("combat", None)
+    _save(data)
+    return "Combat ended."
 
 
 async def demo():
@@ -82,6 +130,10 @@ async def demo():
     tools = [t.name for t in await mcp.list_tools()]
     assert "get_state" in tools
     assert "set_state" in tools
+    assert "get_combat_state" in tools
+    assert "apply_damage" in tools
+    assert "set_combat_state" in tools
+    assert "end_combat" in tools
 
     if _DATA_FILE.exists():
         _DATA_FILE.unlink()
@@ -103,6 +155,39 @@ async def demo():
     party = json.loads(get_party())
     assert len(party) == 1
     assert party[0]["name"] == "Alice"
+
+    combat = json.loads(get_combat_state())
+    assert combat == {}, f"expected empty dict, got {combat}"
+
+    result = apply_damage("Nobody", 5)
+    assert "not found" in result
+
+    set_combat_state(json.dumps({
+        "round": 1,
+        "current_turn_index": 0,
+        "combatants": [
+            {"name": "Goblin", "initiative": 15, "hp": 7, "max_hp": 7, "ac": 15, "conditions": [], "is_player": False},
+            {"name": "Alice", "initiative": 12, "hp": 20, "max_hp": 20, "ac": 14, "conditions": [], "is_player": True},
+        ],
+    }))
+    combat = json.loads(get_combat_state())
+    assert combat["round"] == 1
+    assert len(combat["combatants"]) == 2
+
+    result = apply_damage("Goblin", 5)
+    assert "takes 5 damage" in result
+    assert "(HP: 2/7)" in result
+
+    result = apply_damage("Goblin", 10)
+    assert "(HP: 0/7)" in result
+
+    result = apply_damage("Alice", -5)
+    assert "heals" in result
+    assert "(HP: 20/20)" in result  # ponytail: capped at max_hp
+
+    end_combat()
+    combat = json.loads(get_combat_state())
+    assert combat == {}, f"expected empty dict after end_combat, got {combat}"
 
     _DATA_FILE.unlink()
     print("OK — all tools verified")

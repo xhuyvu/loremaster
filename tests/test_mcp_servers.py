@@ -71,6 +71,10 @@ async def test_campaign_state_server_demo():
     assert "get_campaign" in tools
     assert "add_pc" in tools
     assert "get_party" in tools
+    assert "get_combat_state" in tools
+    assert "apply_damage" in tools
+    assert "set_combat_state" in tools
+    assert "end_combat" in tools
 
 
 class TestCampaignState:
@@ -181,3 +185,172 @@ class TestCampaignInit:
         _DATA_FILE.unlink(missing_ok=True)
         assert get_party() == "[]"
         _DATA_FILE.unlink(missing_ok=True)
+
+
+class TestCombatState:
+    def test_get_empty(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        assert json.loads(get_combat_state()) == {}
+
+    def test_set_and_get(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = json.dumps({"round": 1, "current_turn_index": 0, "combatants": []})
+        set_combat_state(state)
+        result = json.loads(get_combat_state())
+        assert result["round"] == 1
+        assert result["combatants"] == []
+
+    def test_apply_damage(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = {
+            "round": 1,
+            "current_turn_index": 0,
+            "combatants": [
+                {"name": "Goblin", "initiative": 15, "hp": 7, "max_hp": 7, "ac": 15, "conditions": [], "is_player": False},
+            ],
+        }
+        set_combat_state(json.dumps(state))
+
+        result = apply_damage("Goblin", 5)
+        assert "takes 5 damage" in result
+        assert "(HP: 2/7)" in result
+
+    def test_apply_damage_floor_at_zero(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = {
+            "round": 1,
+            "current_turn_index": 0,
+            "combatants": [
+                {"name": "Goblin", "initiative": 15, "hp": 7, "max_hp": 7, "ac": 15, "conditions": [], "is_player": False},
+            ],
+        }
+        set_combat_state(json.dumps(state))
+
+        apply_damage("Goblin", 10)
+        combat = json.loads(get_combat_state())
+        assert combat["combatants"][0]["hp"] == 0
+
+    def test_healing(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = {
+            "round": 1,
+            "current_turn_index": 0,
+            "combatants": [
+                {"name": "Alice", "initiative": 12, "hp": 10, "max_hp": 20, "ac": 14, "conditions": [], "is_player": True},
+            ],
+        }
+        set_combat_state(json.dumps(state))
+
+        result = apply_damage("Alice", -5)
+        assert "heals" in result
+        combat = json.loads(get_combat_state())
+        assert combat["combatants"][0]["hp"] == 15
+
+    def test_healing_capped_at_max_hp(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = {
+            "round": 1,
+            "current_turn_index": 0,
+            "combatants": [
+                {"name": "Alice", "initiative": 12, "hp": 18, "max_hp": 20, "ac": 14, "conditions": [], "is_player": True},
+            ],
+        }
+        set_combat_state(json.dumps(state))
+
+        apply_damage("Alice", -10)
+        combat = json.loads(get_combat_state())
+        assert combat["combatants"][0]["hp"] == 20
+
+    def test_apply_damage_unknown_target(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+        )
+
+        _DATA_FILE.unlink(missing_ok=True)
+        result = apply_damage("Nobody", 5)
+        assert "not found" in result
+
+    def test_end_combat(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            end_combat,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = json.dumps({"round": 1, "current_turn_index": 0, "combatants": []})
+        set_combat_state(state)
+        end_combat()
+        assert json.loads(get_combat_state()) == {}
+
+    def test_cycle(self):
+        from mcp_servers.campaign_state_server.server import (
+            _DATA_FILE,
+            apply_damage,
+            end_combat,
+            get_combat_state,
+            set_combat_state,
+        )
+        import json
+
+        _DATA_FILE.unlink(missing_ok=True)
+        state = {
+            "round": 1,
+            "current_turn_index": 0,
+            "combatants": [
+                {"name": "Goblin", "initiative": 15, "hp": 7, "max_hp": 7, "ac": 15, "conditions": [], "is_player": False},
+            ],
+        }
+        set_combat_state(json.dumps(state))
+        apply_damage("Goblin", 7)
+        combat = json.loads(get_combat_state())
+        assert combat["combatants"][0]["hp"] == 0
+        end_combat()
+        assert json.loads(get_combat_state()) == {}

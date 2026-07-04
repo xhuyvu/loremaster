@@ -38,3 +38,13 @@ def test_world_state_tools():
     assert "get_party" in tool_names
     assert "get_state" in tool_names
     assert "set_state" in tool_names
+
+
+def test_combat_engine_tools():
+    a = CombatEngineAgent()
+    tool_names = {t.__name__ for t in a.tools}
+    assert "roll_dice" in tool_names
+    assert "get_combat_state" in tool_names
+    assert "apply_damage" in tool_names
+    assert "set_combat_state" in tool_names
+    assert "end_combat" in tool_names
